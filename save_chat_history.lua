@@ -4,6 +4,8 @@ DATABASE_FILE = 'chat_history.sqlite3'
 
 function history_cb(extra, success, history)
    if success then
+     successCount = successCount + 1
+      chatsFile:write("-----------new history start----------\n")
       print("------new history start---------")
       for _,m in ipairs(ReverseTable(history)) do
          if not m.service then -- Ignore Telegram service messages
@@ -31,15 +33,26 @@ function history_cb(extra, success, history)
 --                sql = sql .. "'1','".. m.media.type .. "', NULL)"
             end
             local sql = os.date('%Y-%m-%d %H:%M:%S', m.date) .. " " .. m.from.print_name .. ":" .. m.text
+            chatsFile:write(sql .. "\n")
 --             print(m.id)
             -- require 'pl.pretty'.dump(m)
-            print(sql)
+--             print(sql)
 --             db:exec(sql)
          end
       end
-      print("---------------------")
-      print()
+        chatsFile:write("---------------------\n")
+        chatsFile:write("\n")
+        chatsFile:flush()
+--       print("---------------------")
+--       print()
+      currIndex = currIndex + 1
+    else
+      print ("history_cb failure")
    end
+   print ("successCount = " .. successCount)
+
+   -- get next history
+   getNext()
 end
 
 function ReverseTable(t)
@@ -58,14 +71,50 @@ function sortTable(t)
 end
 
 function dialogs_cb(extra, success, dialog)
+  successCount = 0
    if success then
-      for _,d in pairs(dialog) do
-         v = d.peer
-         if v.print_name ~= nil then
-            get_history(v.print_name, MESSAGE_COUNT, history_cb, history_extra)
-         end
-      end
+     print("dialogs_count:" .. #dialog)
+     dialogs = dialog
+     currIndex = 0
+     getNext()
    end
+end
+
+function contacts_cb(extra, success, contacts)
+  successCount = 0
+  if success then
+     print("dialogs_count:" .. #contacts)
+     dialogs = contacts
+     currIndex = 0
+     getNext()
+  else
+    print("contacts_cb failure")
+  end
+end
+
+function getNext()
+  d = dialogs[currIndex]
+  if not d then
+    chatsFile:close()
+    print("fetched all chats")
+    return
+  end
+
+  v = d.peer
+  print("get_history for " .. v.print_name)
+  sleep(1)
+
+  if v.print_name ~= nil and not string.match(v.print_name, "Telegram") then
+    get_history(v.print_name, MESSAGE_COUNT, history_cb, dialogs)
+  else
+    print("v.print_name == nil or == telegram")
+    currIndex = currIndex + 1
+    getNext()
+  end
+end
+
+function sleep(n)
+  os.execute("sleep " .. tonumber(n))
 end
 
 function on_binlog_replay_end ()
@@ -87,6 +136,7 @@ function on_binlog_replay_end ()
 --                                );
 --           ]]
 
+  chatsFile = io.open("chats.txt", "w+")
    get_dialog_list(dialogs_cb, contacts_extra)
 end
 
