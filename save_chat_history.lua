@@ -6,7 +6,7 @@ function history_cb(extra, success, history)
    if success then
      successCount = successCount + 1
       chatsFile:write("-----------new history start----------\n")
-      print("------new history start---------")
+      print("------new history start: " .. #history)
       for _,m in ipairs(ReverseTable(history)) do
          if not m.service then -- Ignore Telegram service messages
 --             local out = m.out and 1 or 0 -- Cast boolean to integer
