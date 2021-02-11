@@ -31,7 +31,7 @@ Fourth, in `peer_name` '#' are substitued to '@'. (Not applied to appending of '
 
 Clone this GitHub repository with `--recursive` parameter to clone submodules.
 
-     git clone --recursive https://github.com/CHANGETHIS/tg.git && cd tg
+     git clone --recursive https://github.com/hzys/tg.git && cd tg
 
 ### Python Support
 
